@@ -175,6 +175,11 @@
       transition: var(--transition-smooth);
       position: relative;
       overflow: hidden;
+      cursor: pointer;
+    }
+
+    .live-status-card:active {
+      transform: scale(0.99);
     }
 
     .live-status-card::before {
@@ -276,6 +281,7 @@
       cursor: pointer;
       backdrop-filter: blur(12px);
       transition: var(--transition-smooth);
+      position: relative;
     }
 
     .day-chip span.day-name {
@@ -290,12 +296,27 @@
       margin-top: 2px;
     }
 
+    .today-dot {
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+
     .day-chip.active {
       background: var(--accent-primary);
       border-color: transparent;
       color: #ffffff !important;
       box-shadow: 0 8px 20px -4px var(--accent-primary);
       transform: translateY(-2px);
+    }
+
+    .day-chip.active .today-dot {
+      background: #ffffff;
+      box-shadow: 0 0 6px #ffffff;
     }
 
     .day-chip.active span.day-name,
@@ -420,6 +441,27 @@
       color: var(--pulse-color);
     }
 
+    .slot-badge-link {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: var(--pulse-color);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-left: 8px;
+      vertical-align: middle;
+      transition: var(--transition-smooth);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .slot-badge-link:active {
+      transform: scale(0.92);
+    }
+
     /* 可插拔卡片抽屉 (Bottom Drawer / Cards Section) */
     .task-cards-section {
       margin-top: 36px;
@@ -431,6 +473,9 @@
       margin-bottom: 14px;
       overflow-x: auto;
       scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 28px;
+      padding-bottom: 4px;
     }
 
     .cards-tab-header::-webkit-scrollbar {
@@ -641,10 +686,33 @@
       text-align: center;
     }
 
+    .nutrition-item {
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 12px;
+      transition: var(--transition-smooth);
+      user-select: none;
+      border: 1px solid transparent;
+    }
+
+    .nutrition-item:active {
+      transform: scale(0.93);
+    }
+
+    .nutrition-item.checked {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
     .nutrition-item h5 {
       font-size: 16px;
       font-weight: 800;
       color: var(--pulse-color);
+      transition: color 0.3s ease;
+    }
+
+    .nutrition-item.checked h5 {
+      color: #10b981;
     }
 
     .nutrition-item p {
@@ -652,6 +720,17 @@
       color: var(--text-muted);
       font-weight: 600;
       margin-top: 2px;
+      transition: color 0.3s ease;
+    }
+
+    .nutrition-item.checked p {
+      color: #10b981;
+    }
+
+    .nutri-check {
+      font-size: 11px;
+      font-weight: 900;
+      margin-left: 2px;
     }
 
     @keyframes pulse-dot {
@@ -708,32 +787,32 @@
     <!-- 动态时间轴 -->
     <div class="timeline-title">
       <span id="currentDayLabel">今日时间骨架</span>
-      <span style="font-size:12px; color:var(--text-muted); font-weight:500;">4 大模块解耦</span>
+      <span id="timelineCountLabel" style="font-size:12px; color:var(--text-muted); font-weight:500;">今日节律</span>
     </div>
 
     <div class="timeline-list" id="timelineList">
       <!-- 动态注入当前选中的日程时间块 -->
     </div>
 
-    <!-- 营养与能量追踪 -->
-    <div class="nutrition-bar">
-      <div class="nutrition-item">
-        <h5>125g</h5>
+    <!-- 营养与能量追踪 (可点击微打卡) -->
+    <div class="nutrition-bar" id="nutritionBar">
+      <div class="nutrition-item" id="nutri_protein" onclick="toggleNutrition('protein')" title="点击记录蛋白质摄入">
+        <h5>125g<span class="nutri-check"></span></h5>
         <p>纯蛋白质</p>
       </div>
       <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
-      <div class="nutrition-item">
-        <h5>5g</h5>
+      <div class="nutrition-item" id="nutri_creatine" onclick="toggleNutrition('creatine')" title="点击记录肌酸摄入">
+        <h5>5g<span class="nutri-check"></span></h5>
         <p>一水肌酸</p>
       </div>
       <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
-      <div class="nutrition-item">
-        <h5>2.8L</h5>
+      <div class="nutrition-item" id="nutri_water" onclick="toggleNutrition('water')" title="点击记录温水灌注">
+        <h5>2.8L<span class="nutri-check"></span></h5>
         <p>温水灌注</p>
       </div>
       <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
-      <div class="nutrition-item">
-        <h5>8h</h5>
+      <div class="nutrition-item" id="nutri_sleep" onclick="toggleNutrition('sleep')" title="点击记录8h睡眠达标">
+        <h5>8h<span class="nutri-check"></span></h5>
         <p>慢波睡眠</p>
       </div>
     </div>
@@ -746,10 +825,10 @@
       </div>
 
       <div class="cards-tab-header">
-        <button class="card-tab-btn active" data-tab="A">☀️ A. 白天专注卡</button>
-        <button class="card-tab-btn" data-tab="B">🌙 B. 晚间研习卡</button>
-        <button class="card-tab-btn" data-tab="C">📴 C. 睡前仪式卡</button>
-        <button class="card-tab-btn" data-tab="D">⚓ 伴随与系统锚点</button>
+        <button class="card-tab-btn active" data-tab="A">☀️ 白天专注 A</button>
+        <button class="card-tab-btn" data-tab="B">🌙 晚间研习 B</button>
+        <button class="card-tab-btn" data-tab="C">📴 睡前仪式 C</button>
+        <button class="card-tab-btn" data-tab="D">⚓ 伴随锚点</button>
       </div>
 
       <div class="card-deck" id="cardDeck">
@@ -770,11 +849,11 @@
         { start: "10:00", end: "12:00", title: "CST308 计算机体系结构 (A3#618)", desc: "MIPS/RISC-V 指令集与流水线，听课重在理解", tags: ["必修", "4学分"], highlight: true },
         { start: "12:00", end: "13:30", title: "午餐充能 + 40min深度午休", desc: "上午连轰4小时，中枢神经必须降温休眠", tags: ["休养"] },
         { start: "14:00", end: "16:00", title: "CST207 算法设计与分析 (A2#G07)", desc: "S级命脉课，死磕算法推导，课上紧跟思路", tags: ["S级命脉", "4学分"], highlight: true },
-        { start: "16:00", end: "18:00", title: "低功耗复盘与笔记整理", desc: "严禁举铁！散步洗澡，整理今天三门课课件", tags: ["复盘"] },
+        { start: "16:00", end: "18:00", title: "低功耗复盘与笔记整理", desc: "严禁举铁！散步洗澡，整理今天三门课课件", tags: ["复盘"], cardTab: "A" },
         { start: "18:00", end: "19:30", title: "晚餐与校园漫步", desc: "正常摄入蛋白质，脱离脑力疲劳", tags: ["放松"] },
-        { start: "19:30", end: "21:45", title: "晚间进阶研习", desc: "英语精听30min + 算法笔记巩固", tags: ["自习"] },
+        { start: "19:30", end: "21:45", title: "晚间进阶研习", desc: "英语精听30min + 算法笔记巩固", tags: ["自习"], cardTab: "B" },
         { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "打游戏、刷B站、看电影，彻底无罪化放松", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "严禁看电子屏！洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "严禁看电子屏！洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周二 (推日，下午全空)
@@ -782,12 +861,12 @@
         { start: "07:30", end: "08:30", title: "系统自然启动", desc: "温水早餐，晨间通读20分钟英语", tags: ["晨间"] },
         { start: "10:00", end: "12:00", title: "MAT107 概率论 (A4#102)", desc: "Peter Zeiner 教授课，严谨数学推导", tags: ["S级基石", "4学分"], highlight: true },
         { start: "12:00", end: "14:30", title: "弹性午餐 + 胃排空 + 午休", desc: "距举铁留足 2 小时，腹部清爽轻盈", tags: ["休养"] },
-        { start: "14:30", end: "15:30", title: "🏋️ 健身房【推日】(错峰包场)", desc: "胸+三头 (卧推/上斜哑铃/双杠臂屈伸) 60min打卡拔插头", tags: ["训练", "包场"], highlight: true },
-        { start: "15:30", end: "18:00", title: "下午技术冲刺", desc: "喝粉冲凉，专业课作业清零 / 算法刷题", tags: ["心流"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【推日】(错峰包场)", desc: "胸+三头 (卧推/上斜哑铃/双杠臂屈伸) 60min打卡拔插头", tags: ["训练", "包场"], highlight: true, cardTab: "D" },
+        { start: "15:30", end: "18:00", title: "下午技术冲刺", desc: "喝粉冲凉，专业课作业清零 / 算法刷题", tags: ["心流"], cardTab: "A" },
         { start: "18:00", end: "19:30", title: "晚餐与散步", desc: "肉蛋奶补充，放松神经", tags: ["放松"] },
-        { start: "19:30", end: "21:45", title: "AI Agent 架构探索", desc: "LLM Agent 独立搭建、Prompt 工作流", tags: ["前沿"] },
+        { start: "19:30", end: "21:45", title: "AI Agent 架构探索", desc: "LLM Agent 独立搭建、Prompt 工作流", tags: ["前沿"], cardTab: "B" },
         { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "打游戏/看番/聊天，尽情释放", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周三 (算法+概率论+Python上机)
@@ -796,12 +875,12 @@
         { start: "10:00", end: "12:00", title: "CST207 算法设计与分析 (A5#G07)", desc: "算法理论深入，紧扣伪代码实现", tags: ["S级命脉", "4学分"], highlight: true },
         { start: "12:00", end: "14:00", title: "MAT107 概率论 (A2#G09)", desc: "两堂连贯，课间备盒牛奶小点心", tags: ["连堂", "4学分"], highlight: true },
         { start: "14:00", end: "14:45", title: "🍗 迟午餐补丁 + 闭目静息", desc: "14点准时吃高蛋白午餐，坐姿闭目15分钟", tags: ["进食补丁"] },
-        { start: "14:45", end: "16:45", title: "下午 AI 项目开发", desc: "为 17:00 上机做准备，写 Python 逻辑", tags: ["动手"] },
+        { start: "14:45", end: "16:45", title: "下午 AI 项目开发", desc: "为 17:00 上机做准备，写 Python 逻辑", tags: ["动手"], cardTab: "A" },
         { start: "17:00", end: "19:00", title: "AIT102 Python & TF 上机 (A1#G01)", desc: "TensorFlow 上机实验，认真搞定每个 Lab", tags: ["作品集", "3学分"], highlight: true },
         { start: "19:15", end: "20:00", title: "🍲 迟晚餐补丁", desc: "大口吃肉补充全天糖原", tags: ["进食补丁"] },
-        { start: "20:00", end: "21:45", title: "顶会论文精读", desc: "读一篇顶会 Abstract+Method，做3句笔记", tags: ["科研进组"] },
+        { start: "20:00", end: "21:45", title: "顶会论文精读", desc: "读一篇顶会 Abstract+Method，做3句笔记", tags: ["科研进组"], cardTab: "B" },
         { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "彻底无罪化开黑放松", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周四 (体系+Python+数据库晚课)
@@ -810,50 +889,50 @@
         { start: "10:00", end: "12:00", title: "CST308 计算机体系结构 (A1#111)", desc: "CPU 流水线与存储层级", tags: ["必修", "4学分"], highlight: true },
         { start: "12:00", end: "14:00", title: "AIT102 Python & TF (A1#105)", desc: "TensorFlow 理论课", tags: ["必修", "3学分"], highlight: true },
         { start: "14:00", end: "15:00", title: "🍗 迟午餐补丁 + 休息", desc: "四小时连上后好好补充优质蛋白", tags: ["进食补丁"] },
-        { start: "15:00", end: "18:00", title: "下午大块心流自习", desc: "专业课作业清零、整理代码库", tags: ["心流"] },
+        { start: "15:00", end: "18:00", title: "下午大块心流自习", desc: "专业课作业清零、整理代码库", tags: ["心流"], cardTab: "A" },
         { start: "18:00", end: "19:00", title: "晚餐与课前清醒", desc: "适量晚餐，准备去上晚课", tags: ["放松"] },
         { start: "19:00", end: "21:00", title: "SOF202 数据库晚课 (A1#111)", desc: "SQL上机与关系范式，认真听完", tags: ["晚课", "4学分"], highlight: true },
         { start: "21:30", end: "22:40", title: "🎮 合法娱乐解耦", desc: "晚课后严禁举铁！直接接驳娱乐放松", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周五 (全天零课程 · 深度科研 + 足球之夜)
       5: [
         { start: "07:30", end: "08:30", title: "系统自然启动", desc: "睡到自然醒，高蛋白丰盛早餐", tags: ["晨间"] },
-        { start: "08:30", end: "12:00", title: "🔬 深度学术研习 (超级黄金块)", desc: "跑代码、复现顶会 Baseline、联系导师进组", tags: ["超级空档", "科研"], highlight: true },
+        { start: "08:30", end: "12:00", title: "🔬 深度学术研习 (超级黄金块)", desc: "跑代码、复现顶会 Baseline、联系导师进组", tags: ["超级空档", "科研"], highlight: true, cardTab: "A" },
         { start: "12:00", end: "14:30", title: "午餐 + 舒适午睡", desc: "全天零课，从容享受午休", tags: ["休养"] },
-        { start: "14:30", end: "18:00", title: "自媒体剪辑 / 项目深度攻坚", desc: "无打扰大块时间，出一期高质量视频", tags: ["创作", "心流"] },
+        { start: "14:30", end: "18:00", title: "自媒体剪辑 / 项目深度攻坚", desc: "无打扰大块时间，出一期高质量视频", tags: ["创作", "心流"], cardTab: "A" },
         { start: "18:00", end: "19:30", title: "轻食晚餐 + 赛前热身", desc: "换好球鞋与球衣，准备上球场", tags: ["准备"] },
         { start: "19:30", end: "21:30", title: "⚽ 绿茵足球狂欢之夜", desc: "高多巴胺释放，心肺与爆发力大汗淋漓！", tags: ["足球", "心肺", "社交"], highlight: true },
         { start: "21:45", end: "22:40", title: "🎮 赛后洗漱与放松", desc: "喝杯牛奶，刷视频聊天", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周六 (拉日 · 背与二头)
       6: [
         { start: "07:30", end: "09:00", title: "周末自然启动", desc: "高蛋白早餐，周末晨读", tags: ["晨间"] },
-        { start: "09:00", end: "12:00", title: "AI Agent & 独立开源开发", desc: "用 Python 敲 Agent 工具流，沉淀 GitHub", tags: ["前沿"] },
+        { start: "09:00", end: "12:00", title: "AI Agent & 独立开源开发", desc: "用 Python 敲 Agent 工具流，沉淀 GitHub", tags: ["前沿"], cardTab: "A" },
         { start: "12:00", end: "14:30", title: "午餐充能 + 胃排空 + 午休", desc: "为下午拉背储备充足糖原", tags: ["休养"] },
-        { start: "14:30", end: "15:30", title: "🏋️ 健身房【拉日】(错峰包场)", desc: "背+二头 (正手引体/俯身划船/弯举) 上肢拉力包场", tags: ["训练", "包场"], highlight: true },
-        { start: "15:30", end: "18:00", title: "自媒体长视频成片剪辑", desc: "粗剪精剪、字幕包装、打磨文案", tags: ["副业"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【拉日】(错峰包场)", desc: "背+二头 (正手引体/俯身划船/弯举) 上肢拉力包场", tags: ["训练", "包场"], highlight: true, cardTab: "D" },
+        { start: "15:30", end: "18:00", title: "自媒体长视频成片剪辑", desc: "粗剪精剪、字幕包装、打磨文案", tags: ["副业"], cardTab: "B" },
         { start: "18:00", end: "19:30", title: "周末晚餐放松", desc: "享受美食，校园散步", tags: ["生活"] },
-        { start: "19:30", end: "21:45", title: "自由学术阅读 / 技术沉淀", desc: "看 Arxiv、整理技术博客", tags: ["研习"] },
+        { start: "19:30", end: "21:45", title: "自由学术阅读 / 技术沉淀", desc: "看 Arxiv、整理技术博客", tags: ["研习"], cardTab: "B" },
         { start: "21:45", end: "22:40", title: "🎮 周末合法游戏狂欢", desc: "彻底无罪化通关畅玩", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ],
       // 周日 (腿肩日 + 每周复盘)
       0: [
         { start: "07:30", end: "09:00", title: "周日系统启动", desc: "温水早餐，晨间听播客", tags: ["晨间"] },
-        { start: "09:00", end: "12:00", title: "专业课预习与下周规划", desc: "过一遍下周算法与概率论重点", tags: ["学业"] },
+        { start: "09:00", end: "12:00", title: "专业课预习与下周规划", desc: "过一遍下周算法与概率论重点", tags: ["学业"], cardTab: "A" },
         { start: "12:00", end: "14:30", title: "午餐充能 + 充分胃排空 + 午休", desc: "为大负荷下肢深蹲蓄满能量", tags: ["休养"] },
-        { start: "14:30", end: "15:30", title: "🏋️ 健身房【腿肩日】(错峰包场)", desc: "高脚杯深蹲/箭步蹲/坐姿推肩/侧平举", tags: ["训练", "包场"], highlight: true },
-        { start: "15:30", end: "18:00", title: "下午深度心流自习", desc: "LeetCode 2道题，保持机试手感", tags: ["心流"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【腿肩日】(错峰包场)", desc: "高脚杯深蹲/箭步蹲/坐姿推肩/侧平举", tags: ["训练", "包场"], highlight: true, cardTab: "D" },
+        { start: "15:30", end: "18:00", title: "下午深度心流自习", desc: "LeetCode 2道题，保持机试手感", tags: ["心流"], cardTab: "A" },
         { start: "18:00", end: "19:30", title: "晚餐与散步", desc: "正常补能，排解压力", tags: ["生活"] },
-        { start: "19:30", end: "21:00", title: "雅思真题全套精练", desc: "1篇长难阅读 + 1篇大作文思路拆解", tags: ["英语"] },
-        { start: "21:00", end: "21:45", title: "📝 每周总结小记录 (核心锚点)", desc: "盘点本周打卡、课业完成度，写下周首要任务", tags: ["复盘", "锚点"], highlight: true },
+        { start: "19:30", end: "21:00", title: "雅思真题全套精练", desc: "1篇长难阅读 + 1篇大作文思路拆解", tags: ["英语"], cardTab: "B" },
+        { start: "21:00", end: "21:45", title: "📝 每周总结小记录 (核心锚点)", desc: "盘点本周打卡、课业完成度，写下周首要任务", tags: ["复盘", "锚点"], highlight: true, cardTab: "D" },
         { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "尽情放松打游戏", tags: ["多巴胺"] },
-        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"], cardTab: "C" },
         { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
       ]
     };
@@ -1037,10 +1116,24 @@
     const currentDayLabel = document.getElementById("currentDayLabel");
 
     function renderDaySelector() {
+      const realToday = new Date().getDay();
       const chips = daySelector.querySelectorAll(".day-chip");
       chips.forEach(chip => {
         const d = parseInt(chip.getAttribute("data-day"));
         chip.classList.toggle("active", d === selectedDay);
+
+        let dot = chip.querySelector(".today-dot");
+        if (d === realToday) {
+          if (!dot) {
+            dot = document.createElement("span");
+            dot.className = "today-dot";
+            dot.title = "现实中的今天";
+            chip.appendChild(dot);
+          }
+        } else if (dot) {
+          dot.remove();
+        }
+
         chip.onclick = () => {
           selectedDay = d;
           renderDaySelector();
@@ -1054,11 +1147,25 @@
       return h * 60 + m;
     }
 
+    function jumpToCardTab(tab) {
+      activeCardTab = tab;
+      renderCards();
+      const target = document.getElementById("cardDeck");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
     function renderTimeline() {
       const dayNames = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
       currentDayLabel.textContent = `${dayNames[selectedDay]} · 详细时间骨架`;
       
       const slots = SCHEDULE_DATA[selectedDay] || [];
+      const timelineCountLabel = document.getElementById("timelineCountLabel");
+      if (timelineCountLabel) {
+        timelineCountLabel.textContent = `今日 ${slots.length} 项日程 · 错峰律动`;
+      }
+
       const now = new Date();
       const currentDay = now.getDay();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -1082,6 +1189,12 @@
           `<span class="slot-tag ${t.includes('命脉') || t.includes('训练') || t.includes('足球') ? 'highlight' : ''}">${t}</span>`
         ).join("");
 
+        const slotBadgeHtml = slot.cardTab ? `
+          <span class="slot-badge-link" onclick="jumpToCardTab('${slot.cardTab}')" title="点击直达对应任务卡">
+            📌 插槽: ${slot.cardTab} 卡 ➔
+          </span>
+        ` : '';
+
         html += `
           <div class="time-slot ${isActive ? 'is-active' : ''}">
             <div class="slot-time-col">
@@ -1089,7 +1202,7 @@
               <span class="slot-end">${slot.end}</span>
             </div>
             <div class="slot-content-col">
-              <div class="slot-title">${slot.title}</div>
+              <div class="slot-title">${slot.title} ${slotBadgeHtml}</div>
               <div class="slot-details">${slot.desc}</div>
               <div class="slot-tags">${tagsHtml}</div>
             </div>
@@ -1241,15 +1354,80 @@
     });
 
     // ══════════════════════════════════════════════════════════════
-    // 6. 系统自适应启动
+    // 6. 身体能量与营养微交互打卡 (每日自动重置)
+    // ══════════════════════════════════════════════════════════════
+    function getTodayKey() {
+      const now = new Date();
+      return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    }
+
+    function getNutritionState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("xbeeear_nutrition_state") || "{}");
+        if (saved && saved.date === getTodayKey()) return saved.items || {};
+        return {}; // 跨天自动重置
+      } catch {
+        return {};
+      }
+    }
+
+    function toggleNutrition(key) {
+      const state = getNutritionState();
+      state[key] = !state[key];
+      localStorage.setItem("xbeeear_nutrition_state", JSON.stringify({
+        date: getTodayKey(),
+        items: state
+      }));
+      renderNutrition();
+    }
+
+    function renderNutrition() {
+      const state = getNutritionState();
+      ['protein', 'creatine', 'water', 'sleep'].forEach(key => {
+        const el = document.getElementById(`nutri_${key}`);
+        if (el) {
+          const isChecked = !!state[key];
+          el.classList.toggle("checked", isChecked);
+          const checkSpan = el.querySelector(".nutri-check");
+          if (checkSpan) {
+            checkSpan.textContent = isChecked ? " ✓" : "";
+          }
+        }
+      });
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 7. 系统自适应启动与交互挂载
     // ══════════════════════════════════════════════════════════════
     window.addEventListener("DOMContentLoaded", () => {
       initTheme();
       renderDaySelector();
       renderTimeline();
       renderCards();
+      renderNutrition();
       updateLiveEngine();
       setInterval(updateLiveEngine, 1000); // 1秒心跳
+
+      // 点击 Live 浮窗平滑直达当前日程节点
+      const liveCardEl = document.getElementById("liveCard");
+      if (liveCardEl) {
+        liveCardEl.onclick = () => {
+          const today = new Date().getDay();
+          if (selectedDay !== today) {
+            selectedDay = today;
+            renderDaySelector();
+            renderTimeline();
+          }
+          setTimeout(() => {
+            const activeEl = document.querySelector(".time-slot.is-active");
+            if (activeEl) {
+              activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+              activeEl.style.boxShadow = "0 0 24px rgba(37, 99, 235, 0.4)";
+              setTimeout(() => { activeEl.style.boxShadow = ""; }, 1400);
+            }
+          }, 120);
+        };
+      }
     });
   </script>
 </body>
