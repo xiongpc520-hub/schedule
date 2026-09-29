@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MySchedule">
+  <title>xbeeear · 节奏与时间骨架</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-main: 'Plus Jakarta Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+      --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ☀️ 浅色模式（自然呼吸 · 极简灰白与厦马深蓝） */
+    [data-theme="light"] {
+      --bg-canvas: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.88);
+      --bg-card-hover: #ffffff;
+      --bg-surface: #ffffff;
+      --border-subtle: rgba(226, 232, 240, 0.8);
+      --border-focus: #3b82f6;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent-primary: #1e3a8a;
+      --accent-glow: rgba(30, 58, 138, 0.12);
+      --accent-active: #2563eb;
+      --tag-bg: #f1f5f9;
+      --tag-text: #334155;
+      --pulse-color: #2563eb;
+      --shadow-soft: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+      --shadow-active: 0 16px 36px -12px rgba(37, 99, 235, 0.18);
+    }
+
+    /* 🌙 深色模式（OLED 深度灰黑与极光蓝霓虹微光） */
+    [data-theme="dark"] {
+      --bg-canvas: #090d16;
+      --bg-card: rgba(17, 24, 39, 0.72);
+      --bg-card-hover: rgba(26, 36, 56, 0.85);
+      --bg-surface: #111827;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: #60a5fa;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-primary: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --accent-active: #0284c7;
+      --tag-bg: rgba(255, 255, 255, 0.06);
+      --tag-text: #cbd5e1;
+      --pulse-color: #38bdf8;
+      --shadow-soft: 0 12px 32px -8px rgba(0, 0, 0, 0.45);
+      --shadow-active: 0 16px 40px -10px rgba(56, 189, 248, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-canvas);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      transition: background 0.5s ease, color 0.5s ease;
+      padding-bottom: calc(40px + env(safe-area-inset-bottom));
+      overflow-x: hidden;
+    }
+
+    /* 顶部流体呼吸光斑 */
+    .ambient-glow {
+      position: fixed;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(40px);
+      transition: var(--transition-smooth);
+    }
+
+    .container {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 24px 20px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 顶栏控制 */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title span.dot {
+      width: 8px;
+      height: 8px;
+      background: var(--pulse-color);
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 12px var(--pulse-color);
+      animation: pulse-dot 2.5s infinite;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .theme-toggle {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow-soft);
+      transition: var(--transition-smooth);
+    }
+
+    .theme-toggle:active {
+      transform: scale(0.92);
+    }
+
+    /* 实时脉冲当前卡片 */
+    .live-status-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-soft);
+      transition: var(--transition-smooth);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .live-status-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(to bottom, var(--pulse-color), var(--accent-active));
+    }
+
+    .live-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--accent-glow);
+      color: var(--pulse-color);
+    }
+
+    .live-clock {
+      font-size: 14px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+    }
+
+    .live-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .live-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .live-progress-container {
+      margin-top: 14px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 99px;
+      height: 5px;
+      overflow: hidden;
+    }
+
+    [data-theme="dark"] .live-progress-container {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .live-progress-bar {
+      height: 100%;
+      background: var(--pulse-color);
+      border-radius: 99px;
+      transition: width 1s linear;
+    }
+
+    /* 星期滑动切换胶囊 */
+    .day-selector {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 4px 0 18px;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .day-selector::-webkit-scrollbar {
+      display: none;
+    }
+
+    .day-chip {
+      flex: 0 0 calc((100% - 36px) / 7);
+      min-width: 44px;
+      height: 56px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: var(--transition-smooth);
+    }
+
+    .day-chip span.day-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .day-chip span.day-tag {
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .day-chip.active {
+      background: var(--accent-primary);
+      border-color: transparent;
+      color: #ffffff !important;
+      box-shadow: 0 8px 20px -4px var(--accent-primary);
+      transform: translateY(-2px);
+    }
+
+    .day-chip.active span.day-name,
+    .day-chip.active span.day-tag {
+      color: #ffffff;
+    }
+
+    /* 核心时间流卡片列表 */
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin: 16px 0 12px 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .time-slot {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 16px;
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .time-slot:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .time-slot.is-active {
+      border: 1.5px solid var(--pulse-color);
+      box-shadow: var(--shadow-active);
+      background: var(--bg-card-hover);
+    }
+
+    .time-slot.is-active::after {
+      content: 'NOW';
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: var(--pulse-color);
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+
+    .slot-time-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-width: 78px;
+    }
+
+    .slot-start {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: var(--text-primary);
+    }
+
+    .slot-end {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .slot-content-col {
+      flex: 1;
+    }
+
+    .slot-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slot-details {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .slot-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .slot-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      font-weight: 600;
+    }
+
+    .slot-tag.highlight {
+      background: var(--accent-glow);
+      color: var(--pulse-color);
+    }
+
+    /* 可插拔卡片抽屉 (Bottom Drawer / Cards Section) */
+    .task-cards-section {
+      margin-top: 36px;
+    }
+
+    .cards-tab-header {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .cards-tab-header::-webkit-scrollbar {
+      display: none;
+    }
+
+    .card-tab-btn {
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: var(--transition-smooth);
+    }
+
+    .card-tab-btn.active {
+      background: var(--text-primary);
+      color: var(--bg-canvas);
+      border-color: transparent;
+    }
+
+    .card-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .strategy-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-left: 3.5px solid var(--pulse-color);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .strategy-banner .strategy-icon {
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .interactive-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .interactive-card:active {
+      transform: scale(0.985);
+    }
+
+    .interactive-card.done {
+      opacity: 0.6;
+    }
+
+    .card-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 2px solid var(--border-subtle);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-smooth);
+      flex-shrink: 0;
+    }
+
+    .interactive-card.done .card-checkbox {
+      background: #10b981;
+      border-color: #10b981;
+    }
+
+    .interactive-card.done .card-checkbox::after {
+      content: '✓';
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .card-content-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .card-cat-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(37, 99, 235, 0.12);
+      color: #2563eb;
+      letter-spacing: 0.5px;
+    }
+    [data-theme="dark"] .card-cat-pill {
+      background: rgba(96, 165, 250, 0.18);
+      color: #93c5fd;
+    }
+
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .interactive-card.done .card-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .card-time-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card-badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .card-note-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(245, 158, 11, 0.12);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    [data-theme="dark"] .card-note-badge {
+      background: rgba(245, 158, 11, 0.18);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .card-focus-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    [data-theme="dark"] .card-focus-badge {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* 营养速查胶囊 */
+    .nutrition-bar {
+      margin-top: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+    }
+
+    .nutrition-item h5 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--pulse-color);
+    }
+
+    .nutrition-item p {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="ambient-glow"></div>
+
+  <div class="container">
+    <!-- 顶栏 -->
+    <header>
+      <div class="brand">
+        <div class="brand-title">
+          <span>xbeeear</span>
+          <span class="dot"></span>
+        </div>
+        <div class="brand-sub">XMUM 数据科学 · 大二秋季学期</div>
+      </div>
+      <div class="controls">
+        <button class="theme-toggle" id="themeBtn" title="切换深浅主题">☀️</button>
+      </div>
+    </header>
+
+    <!-- 实时状态浮窗 -->
+    <div class="live-status-card" id="liveCard">
+      <div class="live-header">
+        <span class="live-badge" id="liveBadge">
+          <span style="width:6px; height:6px; background:currentColor; border-radius:50%; display:inline-block;"></span>
+          LIVE 阶段
+        </span>
+        <span class="live-clock" id="liveClock">21:38:00</span>
+      </div>
+      <div class="live-title" id="liveTitle">加载当前日程中...</div>
+      <div class="live-desc" id="liveDesc">系统正在对齐物理时间骨架</div>
+      <div class="live-progress-container">
+        <div class="live-progress-bar" id="liveProgressBar" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- 星期切换胶囊 -->
+    <div class="day-selector" id="daySelector">
+      <div class="day-chip" data-day="1"><span class="day-name">周一</span><span class="day-tag">3课</span></div>
+      <div class="day-chip" data-day="2"><span class="day-name">周二</span><span class="day-tag">推</span></div>
+      <div class="day-chip" data-day="3"><span class="day-name">周三</span><span class="day-tag">AI</span></div>
+      <div class="day-chip" data-day="4"><span class="day-name">周四</span><span class="day-tag">晚课</span></div>
+      <div class="day-chip" data-day="5"><span class="day-name">周五</span><span class="day-tag">⚽</span></div>
+      <div class="day-chip" data-day="6"><span class="day-name">周六</span><span class="day-tag">拉</span></div>
+      <div class="day-chip" data-day="0"><span class="day-name">周日</span><span class="day-tag">腿肩</span></div>
+    </div>
+
+    <!-- 动态时间轴 -->
+    <div class="timeline-title">
+      <span id="currentDayLabel">今日时间骨架</span>
+      <span style="font-size:12px; color:var(--text-muted); font-weight:500;">4 大模块解耦</span>
+    </div>
+
+    <div class="timeline-list" id="timelineList">
+      <!-- 动态注入当前选中的日程时间块 -->
+    </div>
+
+    <!-- 营养与能量追踪 -->
+    <div class="nutrition-bar">
+      <div class="nutrition-item">
+        <h5>125g</h5>
+        <p>纯蛋白质</p>
+      </div>
+      <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
+      <div class="nutrition-item">
+        <h5>5g</h5>
+        <p>一水肌酸</p>
+      </div>
+      <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
+      <div class="nutrition-item">
+        <h5>2.8L</h5>
+        <p>温水灌注</p>
+      </div>
+      <div style="width:1px; height:24px; background:var(--border-subtle);"></div>
+      <div class="nutrition-item">
+        <h5>8h</h5>
+        <p>慢波睡眠</p>
+      </div>
+    </div>
+
+    <!-- 可插拔任务卡抽屉 -->
+    <div class="task-cards-section">
+      <div class="timeline-title">
+        <span>任务卡片库 (Task Cards)</span>
+        <span style="font-size:11px; color:var(--pulse-color); cursor:pointer;" onclick="resetDoneCards()">重置打卡</span>
+      </div>
+
+      <div class="cards-tab-header">
+        <button class="card-tab-btn active" data-tab="A">☀️ A. 白天专注卡</button>
+        <button class="card-tab-btn" data-tab="B">🌙 B. 晚间研习卡</button>
+        <button class="card-tab-btn" data-tab="C">📴 C. 睡前仪式卡</button>
+        <button class="card-tab-btn" data-tab="D">⚓ 伴随与系统锚点</button>
+      </div>
+
+      <div class="card-deck" id="cardDeck">
+        <!-- 动态卡片内容 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ══════════════════════════════════════════════════════════════
+    // 1. 课表与时间骨架全量配置（对齐真实课表与双模态调度）
+    // ══════════════════════════════════════════════════════════════
+    const SCHEDULE_DATA = {
+      // 周一 (三门重课连环)
+      1: [
+        { start: "07:30", end: "08:00", title: "系统自然启动", desc: "温水500ml+肌酸5g，高蛋白早餐，不急不躁", tags: ["晨间"] },
+        { start: "08:00", end: "10:00", title: "SOF202 数据库原理 (A4#G01)", desc: "新学期第一课，多表SQL与关系代数基础", tags: ["必修", "4学分"], highlight: true },
+        { start: "10:00", end: "12:00", title: "CST308 计算机体系结构 (A3#618)", desc: "MIPS/RISC-V 指令集与流水线，听课重在理解", tags: ["必修", "4学分"], highlight: true },
+        { start: "12:00", end: "13:30", title: "午餐充能 + 40min深度午休", desc: "上午连轰4小时，中枢神经必须降温休眠", tags: ["休养"] },
+        { start: "14:00", end: "16:00", title: "CST207 算法设计与分析 (A2#G07)", desc: "S级命脉课，死磕算法推导，课上紧跟思路", tags: ["S级命脉", "4学分"], highlight: true },
+        { start: "16:00", end: "18:00", title: "低功耗复盘与笔记整理", desc: "严禁举铁！散步洗澡，整理今天三门课课件", tags: ["复盘"] },
+        { start: "18:00", end: "19:30", title: "晚餐与校园漫步", desc: "正常摄入蛋白质，脱离脑力疲劳", tags: ["放松"] },
+        { start: "19:30", end: "21:45", title: "晚间进阶研习", desc: "英语精听30min + 算法笔记巩固", tags: ["自习"] },
+        { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "打游戏、刷B站、看电影，彻底无罪化放松", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "严禁看电子屏！洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周二 (推日，下午全空)
+      2: [
+        { start: "07:30", end: "08:30", title: "系统自然启动", desc: "温水早餐，晨间通读20分钟英语", tags: ["晨间"] },
+        { start: "10:00", end: "12:00", title: "MAT107 概率论 (A4#102)", desc: "Peter Zeiner 教授课，严谨数学推导", tags: ["S级基石", "4学分"], highlight: true },
+        { start: "12:00", end: "14:30", title: "弹性午餐 + 胃排空 + 午休", desc: "距举铁留足 2 小时，腹部清爽轻盈", tags: ["休养"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【推日】(错峰包场)", desc: "胸+三头 (卧推/上斜哑铃/双杠臂屈伸) 60min打卡拔插头", tags: ["训练", "包场"], highlight: true },
+        { start: "15:30", end: "18:00", title: "下午技术冲刺", desc: "喝粉冲凉，专业课作业清零 / 算法刷题", tags: ["心流"] },
+        { start: "18:00", end: "19:30", title: "晚餐与散步", desc: "肉蛋奶补充，放松神经", tags: ["放松"] },
+        { start: "19:30", end: "21:45", title: "AI Agent 架构探索", desc: "LLM Agent 独立搭建、Prompt 工作流", tags: ["前沿"] },
+        { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "打游戏/看番/聊天，尽情释放", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周三 (算法+概率论+Python上机)
+      3: [
+        { start: "07:30", end: "09:30", title: "系统自然启动 + 预习", desc: "温水早餐，过一遍算法课前思考", tags: ["晨间"] },
+        { start: "10:00", end: "12:00", title: "CST207 算法设计与分析 (A5#G07)", desc: "算法理论深入，紧扣伪代码实现", tags: ["S级命脉", "4学分"], highlight: true },
+        { start: "12:00", end: "14:00", title: "MAT107 概率论 (A2#G09)", desc: "两堂连贯，课间备盒牛奶小点心", tags: ["连堂", "4学分"], highlight: true },
+        { start: "14:00", end: "14:45", title: "🍗 迟午餐补丁 + 闭目静息", desc: "14点准时吃高蛋白午餐，坐姿闭目15分钟", tags: ["进食补丁"] },
+        { start: "14:45", end: "16:45", title: "下午 AI 项目开发", desc: "为 17:00 上机做准备，写 Python 逻辑", tags: ["动手"] },
+        { start: "17:00", end: "19:00", title: "AIT102 Python & TF 上机 (A1#G01)", desc: "TensorFlow 上机实验，认真搞定每个 Lab", tags: ["作品集", "3学分"], highlight: true },
+        { start: "19:15", end: "20:00", title: "🍲 迟晚餐补丁", desc: "大口吃肉补充全天糖原", tags: ["进食补丁"] },
+        { start: "20:00", end: "21:45", title: "顶会论文精读", desc: "读一篇顶会 Abstract+Method，做3句笔记", tags: ["科研进组"] },
+        { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "彻底无罪化开黑放松", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周四 (体系+Python+数据库晚课)
+      4: [
+        { start: "07:30", end: "09:30", title: "系统自然启动", desc: "温水早餐，英语词汇打卡", tags: ["晨间"] },
+        { start: "10:00", end: "12:00", title: "CST308 计算机体系结构 (A1#111)", desc: "CPU 流水线与存储层级", tags: ["必修", "4学分"], highlight: true },
+        { start: "12:00", end: "14:00", title: "AIT102 Python & TF (A1#105)", desc: "TensorFlow 理论课", tags: ["必修", "3学分"], highlight: true },
+        { start: "14:00", end: "15:00", title: "🍗 迟午餐补丁 + 休息", desc: "四小时连上后好好补充优质蛋白", tags: ["进食补丁"] },
+        { start: "15:00", end: "18:00", title: "下午大块心流自习", desc: "专业课作业清零、整理代码库", tags: ["心流"] },
+        { start: "18:00", end: "19:00", title: "晚餐与课前清醒", desc: "适量晚餐，准备去上晚课", tags: ["放松"] },
+        { start: "19:00", end: "21:00", title: "SOF202 数据库晚课 (A1#111)", desc: "SQL上机与关系范式，认真听完", tags: ["晚课", "4学分"], highlight: true },
+        { start: "21:30", end: "22:40", title: "🎮 合法娱乐解耦", desc: "晚课后严禁举铁！直接接驳娱乐放松", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周五 (全天零课程 · 深度科研 + 足球之夜)
+      5: [
+        { start: "07:30", end: "08:30", title: "系统自然启动", desc: "睡到自然醒，高蛋白丰盛早餐", tags: ["晨间"] },
+        { start: "08:30", end: "12:00", title: "🔬 深度学术研习 (超级黄金块)", desc: "跑代码、复现顶会 Baseline、联系导师进组", tags: ["超级空档", "科研"], highlight: true },
+        { start: "12:00", end: "14:30", title: "午餐 + 舒适午睡", desc: "全天零课，从容享受午休", tags: ["休养"] },
+        { start: "14:30", end: "18:00", title: "自媒体剪辑 / 项目深度攻坚", desc: "无打扰大块时间，出一期高质量视频", tags: ["创作", "心流"] },
+        { start: "18:00", end: "19:30", title: "轻食晚餐 + 赛前热身", desc: "换好球鞋与球衣，准备上球场", tags: ["准备"] },
+        { start: "19:30", end: "21:30", title: "⚽ 绿茵足球狂欢之夜", desc: "高多巴胺释放，心肺与爆发力大汗淋漓！", tags: ["足球", "心肺", "社交"], highlight: true },
+        { start: "21:45", end: "22:40", title: "🎮 赛后洗漱与放松", desc: "喝杯牛奶，刷视频聊天", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周六 (拉日 · 背与二头)
+      6: [
+        { start: "07:30", end: "09:00", title: "周末自然启动", desc: "高蛋白早餐，周末晨读", tags: ["晨间"] },
+        { start: "09:00", end: "12:00", title: "AI Agent & 独立开源开发", desc: "用 Python 敲 Agent 工具流，沉淀 GitHub", tags: ["前沿"] },
+        { start: "12:00", end: "14:30", title: "午餐充能 + 胃排空 + 午休", desc: "为下午拉背储备充足糖原", tags: ["休养"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【拉日】(错峰包场)", desc: "背+二头 (正手引体/俯身划船/弯举) 上肢拉力包场", tags: ["训练", "包场"], highlight: true },
+        { start: "15:30", end: "18:00", title: "自媒体长视频成片剪辑", desc: "粗剪精剪、字幕包装、打磨文案", tags: ["副业"] },
+        { start: "18:00", end: "19:30", title: "周末晚餐放松", desc: "享受美食，校园散步", tags: ["生活"] },
+        { start: "19:30", end: "21:45", title: "自由学术阅读 / 技术沉淀", desc: "看 Arxiv、整理技术博客", tags: ["研习"] },
+        { start: "21:45", end: "22:40", title: "🎮 周末合法游戏狂欢", desc: "彻底无罪化通关畅玩", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ],
+      // 周日 (腿肩日 + 每周复盘)
+      0: [
+        { start: "07:30", end: "09:00", title: "周日系统启动", desc: "温水早餐，晨间听播客", tags: ["晨间"] },
+        { start: "09:00", end: "12:00", title: "专业课预习与下周规划", desc: "过一遍下周算法与概率论重点", tags: ["学业"] },
+        { start: "12:00", end: "14:30", title: "午餐充能 + 充分胃排空 + 午休", desc: "为大负荷下肢深蹲蓄满能量", tags: ["休养"] },
+        { start: "14:30", end: "15:30", title: "🏋️ 健身房【腿肩日】(错峰包场)", desc: "高脚杯深蹲/箭步蹲/坐姿推肩/侧平举", tags: ["训练", "包场"], highlight: true },
+        { start: "15:30", end: "18:00", title: "下午深度心流自习", desc: "LeetCode 2道题，保持机试手感", tags: ["心流"] },
+        { start: "18:00", end: "19:30", title: "晚餐与散步", desc: "正常补能，排解压力", tags: ["生活"] },
+        { start: "19:30", end: "21:00", title: "雅思真题全套精练", desc: "1篇长难阅读 + 1篇大作文思路拆解", tags: ["英语"] },
+        { start: "21:00", end: "21:45", title: "📝 每周总结小记录 (核心锚点)", desc: "盘点本周打卡、课业完成度，写下周首要任务", tags: ["复盘", "锚点"], highlight: true },
+        { start: "21:45", end: "22:40", title: "🎮 合法娱乐解耦", desc: "尽情放松打游戏", tags: ["多巴胺"] },
+        { start: "22:40", end: "23:30", title: "📴 物理禁屏美学流", desc: "洗澡护肤 15min → 练字 15min → 纸质书 10min → 冥想 10min", tags: ["禁屏", "美学"] },
+        { start: "23:30", end: "07:30", title: "😴 慢波深度睡眠", desc: "锁死 8 小时高质量修复", tags: ["睡眠"] }
+      ]
+    };
+
+    // 任务卡片库定义（对齐物理手写卡片 + 算法架构与升学闭环优化）
+    const CARD_LIBRARY = {
+      A: {
+        tip: "🎯 <b>白天心流原则</b>：无课上午或 15:30~18:00，单次单任务 40min 番茄攻坚，杜绝多任务并发消耗中枢神经",
+        cards: [
+          {
+            id: "A1",
+            cat: "A.",
+            title: "读论文 + 复现代码",
+            time: "⏱️ 40m breaks ->",
+            noteBadge: "🎯 进组目标 · 校内老师？",
+            focusBadge: "推免硬实力",
+            desc: "精读顶会论文 Abstract/Method，用 Python 跑通 Baseline 源码。带着复现成果自荐联系本校老师，锁定大二科研助理 (RA) 席位。"
+          },
+          {
+            id: "A2",
+            cat: "A.",
+            title: "专业课深度消化",
+            time: "⏱️ 40mins 休息 ->",
+            noteBadge: "🔥 GPA 命脉 · 锁定 4.0",
+            focusBadge: "专业前 20%",
+            desc: "死磕 CST207 算法设计推导证明 / MAT107 概率论公式推演 / CST308 体系结构流水线，课后及时将 Lecture Notes 数字化清零。"
+          },
+          {
+            id: "A3",
+            cat: "A.",
+            title: "AI 项目开发实战",
+            time: "⏱️ 40m breaks ->",
+            noteBadge: "⚡ github skill · 开源仓库",
+            focusBadge: "工业级工程",
+            desc: "动手敲 Python / Web3 数据流 / AI Agent 工具流代码。高标准写 Clean Code 与 README，保持 GitHub 绿墙持续提交。"
+          }
+        ]
+      },
+      B: {
+        tip: "⚖️ <b>晚间防超载原则 (135min 黄金块)</b>：推荐精选 1 张雅思真题卡 + 1 张核心输出卡 (Agent架构 或 自媒体 二选一)",
+        cards: [
+          {
+            id: "B1",
+            cat: "B.",
+            title: "Eng 阅读 (做真题)",
+            time: "⏱️ 30 mins",
+            noteBadge: "📚 剑雅真题 · 限时精练",
+            focusBadge: "雅思 7.0+",
+            desc: "限时 20-30 分钟精刷 1 篇剑雅长篇阅读，严谨拆解段落同义替换词与长难句主干逻辑，建立学术英文直觉。"
+          },
+          {
+            id: "B2",
+            cat: "B.",
+            title: "英语精听 (真题为主)",
+            time: "⏱️ 30 mins",
+            noteBadge: "🎧 真题精析 · 听抄纠音",
+            focusBadge: "语感内化",
+            desc: "选取剑雅 Section 3/4 学术对话或讲座，单句循环精听、盲听听抄与跟读纠音，扎实击穿连读弱读听觉盲区。"
+          },
+          {
+            id: "B3",
+            cat: "B.",
+            title: "agent 架构学习",
+            time: "⏱️ 40m b ->",
+            noteBadge: "🧠 前沿架构 · 源码拆解",
+            focusBadge: "技术壁垒",
+            desc: "研读 Agent 核心机制：AutoGen / LangGraph 拓扑编排、Context Window 调度、Prompt Cache 与 Function Calling 底层原理。"
+          },
+          {
+            id: "B4",
+            cat: "B.",
+            title: "自媒体运营 / 剪辑",
+            time: "⏱️ 40 min ->",
+            noteBadge: "🎬 内容创作 · 个人IP",
+            focusBadge: "影响力复利",
+            desc: "视频选题与大纲构思、剪映/PR 粗剪精剪、花字音效包装与封面文案打磨，持续输出高质量大学生硬核技术/生活日常。"
+          }
+        ]
+      },
+      C: {
+        tip: "📴 <b>睡前 50min 零屏幕降噪</b>：洗浴护肤 15min (骨架基础) ➔ 练字 / 阅读二选一 ➔ 10min 冥想清空思维，23:30 入眠",
+        cards: [
+          {
+            id: "C1",
+            cat: "C.",
+            title: "伏案静心练字",
+            time: "⏱️ 15 mins",
+            noteBadge: "✍️ 触纸沉浸 · 神经降温",
+            focusBadge: "专注止躁",
+            desc: "柔和暖光台灯下，翻开字帖伏案临摹。彻底切断电子蓝光与信息过载刺激，让躁动的中枢神经自然平静降温。"
+          },
+          {
+            id: "C2",
+            cat: "C.",
+            title: "人文深度阅读",
+            time: "⏱️ 20 mins",
+            noteBadge: "📖 纸质书籍 / 电子书",
+            focusBadge: "思维升维",
+            desc: "翻阅非技术类人文社科、哲学或历史书籍，嗅着纸墨香气拓宽认知视野，为大脑营造舒适的入眠微醺状态。"
+          },
+          {
+            id: "C3",
+            cat: "C.",
+            title: "深度止念冥想",
+            time: "⏱️ 15 mins",
+            noteBadge: "🧘 4-7-8 腹式呼吸 · 清空缓存",
+            focusBadge: "慢波深度修复",
+            desc: "平躺或打坐，深长腹式呼吸。觉察并释放全天工作记忆与焦虑念头，清空大脑思维缓存，23:30 准时熄灯进入慢波深睡。"
+          }
+        ]
+      },
+      D: {
+        tip: "🌊 <b>系统伴随与底层锚点</b>：零碎泛听不消耗意志力；健身锁定错峰到点即走；周日晚锁定推免升学主线复盘",
+        cards: [
+          {
+            id: "D1",
+            cat: "Anchor",
+            title: "平时英语播客",
+            time: "🎧 平时全天泛听",
+            noteBadge: "🌊 无痛磨耳朵 · 背景伴随",
+            focusBadge: "零意志力消耗",
+            desc: "本子底栏手写批注：洗漱、食堂排队、校园步行通勤或散步时，戴耳机播放 The Daily / BBC 6-Minute，潜意识浸润母语环境。"
+          },
+          {
+            id: "D2",
+            cat: "Anchor",
+            title: "周日每周总结小记录",
+            time: "📝 周日 21:00",
+            noteBadge: "🎯 上周荣誉突破 · 下周锚点",
+            focusBadge: "保研战略总控",
+            desc: "本子底栏核心锚点：盘点本周课业 GPA 巩固、竞赛科研产出与打卡完成度，写下周首要攻坚的 3 个核心战役，绝不偏航。"
+          },
+          {
+            id: "D3",
+            cat: "Anchor",
+            title: "错峰极速举铁 (胸/背/肩)",
+            time: "🏋️ 14:30~15:30 (1h)",
+            noteBadge: "💪 周二胸 · 周六背 · 周日肩",
+            focusBadge: "精力泵源",
+            desc: "手写骨架物理锚点：锁定 14:30 错峰进场包场举铁，专注大重量复合动作。严格 60 分钟内准时离场拔插头，绝不拖沓。"
+          }
+        ]
+      }
+    };
+
+    // ══════════════════════════════════════════════════════════════
+    // 2. 主题引擎（自动根据时间切换深浅 + 手动覆盖）
+    // ══════════════════════════════════════════════════════════════
+    const themeBtn = document.getElementById("themeBtn");
+    
+    function initTheme() {
+      const savedTheme = localStorage.getItem("xbeeear_theme");
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else {
+        // 自动按自然时间判断：06:30 到 18:30 为浅色，其余为深色
+        const now = new Date();
+        const hour = now.getHours();
+        const autoTheme = (hour >= 6 && hour < 18) ? "light" : "dark";
+        setTheme(autoTheme);
+      }
+    }
+
+    function setTheme(theme) {
+      document.body.setAttribute("data-theme", theme);
+      themeBtn.textContent = theme === "dark" ? "🌙" : "☀️";
+      localStorage.setItem("xbeeear_theme", theme);
+    }
+
+    themeBtn.addEventListener("click", () => {
+      const current = document.body.getAttribute("data-theme");
+      setTheme(current === "dark" ? "light" : "dark");
+    });
+
+    // ══════════════════════════════════════════════════════════════
+    // 3. 动态时间轴渲染与实时脉冲
+    // ══════════════════════════════════════════════════════════════
+    let selectedDay = new Date().getDay(); // 默认今天
+    const timelineList = document.getElementById("timelineList");
+    const daySelector = document.getElementById("daySelector");
+    const currentDayLabel = document.getElementById("currentDayLabel");
+
+    function renderDaySelector() {
+      const chips = daySelector.querySelectorAll(".day-chip");
+      chips.forEach(chip => {
+        const d = parseInt(chip.getAttribute("data-day"));
+        chip.classList.toggle("active", d === selectedDay);
+        chip.onclick = () => {
+          selectedDay = d;
+          renderDaySelector();
+          renderTimeline();
+        };
+      });
+    }
+
+    function timeToMinutes(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    }
+
+    function renderTimeline() {
+      const dayNames = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+      currentDayLabel.textContent = `${dayNames[selectedDay]} · 详细时间骨架`;
+      
+      const slots = SCHEDULE_DATA[selectedDay] || [];
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      let html = "";
+      slots.forEach((slot, idx) => {
+        const startMin = timeToMinutes(slot.start);
+        const endMin = timeToMinutes(slot.end);
+        
+        let isActive = false;
+        // 跨天判断 (如 23:30 到 07:30)
+        if (selectedDay === currentDay) {
+          if (startMin > endMin) {
+            isActive = currentMinutes >= startMin || currentMinutes < endMin;
+          } else {
+            isActive = currentMinutes >= startMin && currentMinutes < endMin;
+          }
+        }
+
+        const tagsHtml = (slot.tags || []).map(t => 
+          `<span class="slot-tag ${t.includes('命脉') || t.includes('训练') || t.includes('足球') ? 'highlight' : ''}">${t}</span>`
+        ).join("");
+
+        html += `
+          <div class="time-slot ${isActive ? 'is-active' : ''}">
+            <div class="slot-time-col">
+              <span class="slot-start">${slot.start}</span>
+              <span class="slot-end">${slot.end}</span>
+            </div>
+            <div class="slot-content-col">
+              <div class="slot-title">${slot.title}</div>
+              <div class="slot-details">${slot.desc}</div>
+              <div class="slot-tags">${tagsHtml}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      timelineList.innerHTML = html;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 4. 实时时钟与当前进行状态检测
+    // ══════════════════════════════════════════════════════════════
+    function updateLiveEngine() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById("liveClock").textContent = `${h}:${m}:${s}`;
+
+      const today = now.getDay();
+      const currentMin = now.getHours() * 60 + now.getMinutes();
+      const slots = SCHEDULE_DATA[today] || [];
+
+      let activeSlot = null;
+      let progressPercent = 0;
+      let remainingMin = 0;
+
+      for (let slot of slots) {
+        const sMin = timeToMinutes(slot.start);
+        const eMin = timeToMinutes(slot.end);
+        let inRange = false;
+        let totalDuration = 0;
+        let elapsed = 0;
+
+        if (sMin > eMin) { // 跨天
+          inRange = currentMin >= sMin || currentMin < eMin;
+          totalDuration = (1440 - sMin) + eMin;
+          elapsed = currentMin >= sMin ? (currentMin - sMin) : ((1440 - sMin) + currentMin);
+        } else {
+          inRange = currentMin >= sMin && currentMin < eMin;
+          totalDuration = eMin - sMin;
+          elapsed = currentMin - sMin;
+        }
+
+        if (inRange) {
+          activeSlot = slot;
+          progressPercent = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+          remainingMin = totalDuration - elapsed;
+          break;
+        }
+      }
+
+      const liveTitle = document.getElementById("liveTitle");
+      const liveDesc = document.getElementById("liveDesc");
+      const liveProgressBar = document.getElementById("liveProgressBar");
+      const liveBadge = document.getElementById("liveBadge");
+
+      if (activeSlot) {
+        liveTitle.textContent = activeSlot.title;
+        liveDesc.textContent = `${activeSlot.desc} · 预计还剩 ${remainingMin} 分钟`;
+        liveProgressBar.style.width = `${progressPercent}%`;
+        liveBadge.innerHTML = `<span style="width:6px; height:6px; background:currentColor; border-radius:50%; display:inline-block;"></span> 正在进行中`;
+      } else {
+        liveTitle.textContent = "自由律动时间";
+        liveDesc.textContent = "当前未处于严苛排期中，自主掌控呼吸节奏";
+        liveProgressBar.style.width = "0%";
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // 5. 可插拔卡片打卡抽屉 (LocalStorage 持久化)
+    // ══════════════════════════════════════════════════════════════
+    let activeCardTab = "A";
+
+    function getDoneCards() {
+      try {
+        return JSON.parse(localStorage.getItem("xbeeear_done_cards") || "{}");
+      } catch {
+        return {};
+      }
+    }
+
+    function toggleCardDone(cardId) {
+      const doneMap = getDoneCards();
+      doneMap[cardId] = !doneMap[cardId];
+      localStorage.setItem("xbeeear_done_cards", JSON.stringify(doneMap));
+      renderCards();
+    }
+
+    function resetDoneCards() {
+      if (confirm("确定重置今天的打卡勾选吗？")) {
+        localStorage.removeItem("xbeeear_done_cards");
+        renderCards();
+      }
+    }
+
+    function renderCards() {
+      const deck = document.getElementById("cardDeck");
+      const tabData = CARD_LIBRARY[activeCardTab] || { tip: "", cards: [] };
+      const cards = tabData.cards || [];
+      const doneMap = getDoneCards();
+
+      let html = "";
+      if (tabData.tip) {
+        html += `
+          <div class="strategy-banner">
+            <span class="strategy-icon">💡</span>
+            <div class="strategy-text">${tabData.tip}</div>
+          </div>
+        `;
+      }
+
+      html += cards.map(c => {
+        const isDone = !!doneMap[c.id];
+        return `
+          <div class="interactive-card ${isDone ? 'done' : ''}" onclick="toggleCardDone('${c.id}')">
+            <div class="card-checkbox"></div>
+            <div class="card-content-col">
+              <div class="card-header-row">
+                <div class="card-title-group">
+                  <span class="card-cat-pill">${c.cat}</span>
+                  <span class="card-title">${c.title}</span>
+                </div>
+                <span class="card-time-pill">${c.time}</span>
+              </div>
+              <div class="card-badges-row">
+                <span class="card-note-badge">${c.noteBadge}</span>
+                ${c.focusBadge ? `<span class="card-focus-badge">${c.focusBadge}</span>` : ''}
+              </div>
+              <div class="card-desc">${c.desc}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      deck.innerHTML = html;
+
+      document.querySelectorAll(".card-tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-tab") === activeCardTab);
+      });
+    }
+
+    document.querySelectorAll(".card-tab-btn").forEach(btn => {
+      btn.onclick = () => {
+        activeCardTab = btn.getAttribute("data-tab");
+        renderCards();
+      };
+    });
+
+    // ══════════════════════════════════════════════════════════════
+    // 6. 系统自适应启动
+    // ══════════════════════════════════════════════════════════════
+    window.addEventListener("DOMContentLoaded", () => {
+      initTheme();
+      renderDaySelector();
+      renderTimeline();
+      renderCards();
+      updateLiveEngine();
+      setInterval(updateLiveEngine, 1000); // 1秒心跳
+    });
+  </script>
+</body>
+</html>
