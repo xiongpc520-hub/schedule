@@ -95,10 +95,9 @@ GitHub Pages 会在 30 秒内自动完成全球 CDN 部署，手机端下拉刷�
 
 ## 👨‍💻 作者
 
-**熊培诚 (xbeeear)**  
+**熊培诚 **  
 * 厦门大学马来西亚分校 (XMUM) · 数据科学与大数据技术 (Data Science)
 * GitHub: [@xiongpc520-hub](https://github.com/xiongpc520-hub)
-* 主攻方向：国内顶尖 985 保研推免 · 港新顶尖名校 Data Science 硕士 · AI Agent & 算法工程
 
 ---
 
